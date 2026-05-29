@@ -1,0 +1,6 @@
+{
+  "name": "Academia de Español para Árabes",
+  "description": "Una plataforma integral de aprendizaje de español como segunda lengua para personas de habla árabe. Incluye lecciones interactivas, explicaciones gramaticales comparativas, gamificación por niveles, tutor chat de IA, laboratorio de pronunciación por voz, tests de nivel con certificados, calendario y analíticas.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
