@@ -1,10 +1,6 @@
-import express from "express";
 import { GoogleGenAI } from "@google/genai";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-// Initialize Gemini SDK with telemetry header
+// Inicializamos Gemini de forma segura con el encabezado de AI Studio
 const ai = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
@@ -16,10 +12,12 @@ const ai = process.env.GEMINI_API_KEY
     })
   : null;
 
-const router = express.Router();
+export default async function handler(req: any, res: any) {
+  // Manejo manual de rutas que antes hacía Express
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-// API Route for Spanish Chat Tutor
-router.post("/chat", async (req, res) => {
   try {
     const { messages, tutorInfo } = req.body;
     
@@ -51,17 +49,19 @@ Instrucciones críticas de comportamiento:
    - Explica el uso de los verbos Ser y Estar comparándolo con la oración nominal árabe sin cópula (جملة اسمية).
    - Recomienda palabras con raíz compartida árabe-española (como almohada/المخدة [al-mukhada], azúcar/السكر [as-sukkar], etc.).
 3. Siempre corrige de manera constructiva cualquier error del alumno. Explícale su fallo gramatical en árabe de forma comprensible y dale una versión corregida en español.
-4. Mantén la motivación viva con palabras de aliento (¡Excelente! / ممتاز !, ¡Así se hace! / أحสنت !).
+4. Mantén la motivación viva con palabras de aliento (¡Excelente! / ممتاز !, ¡Así se hace! / أحسنت !).
 5. Las respuestas deben ser breves, cómodas de leer en móviles y empáticas.
 `;
 
+    // Mapeamos los mensajes asegurando que 'text' esté presente
     const contents = messages.map((m: any) => ({
       role: m.role === "user" ? "user" : "model",
-      parts: [{ text: m.text }]
+      parts: [{ text: m.text || m.content || "" }]
     }));
 
+    // Usamos el modelo correcto y la configuración nativa del SDK
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash", 
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
@@ -70,18 +70,13 @@ Instrucciones críticas de comportamiento:
     });
 
     const replyText = response.text || "Lo siento, tuve dificultades para procesar eso. ¿Podrías repetirlo?";
-    res.json({ text: replyText });
+    return res.status(200).json({ text: replyText });
+
   } catch (error: any) {
     console.error("Gemini API Error in backend:", error);
-    res.status(500).json({
+    return res.status(500).json({
       error: "Internal Server Error",
       message: error.message || "No se pudo conectar con el servidor de la inteligencia artificial."
     });
   }
-});
-
-router.get("/health", (req, res) => {
-  res.json({ status: "ok", apiConfigured: !!ai });
-});
-
-export default router;
+}
